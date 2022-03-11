@@ -24,7 +24,6 @@ func Server(opts ...func(*http.Server)) *http.Server {
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 		IdleTimeout:  30 * time.Second,
-		TLSConfig:    LocalTLSConfig("certs/cert.pem", "certs/key.pem"),
 	}
 	for _, opt := range opts {
 		opt(srv)
@@ -95,6 +94,9 @@ func AutoCertTLSConfig(email, host string) *tls.Config {
 		acme.ALPNProto, // enable tls-alpn ACME challenges
 	}
 	conf.GetCertificate = m.GetCertificate
+	srv := Server(WithAddr(":http"))
+	srv.Handler = m.HTTPHandler(nil)
+	go srv.ListenAndServe()
 	return conf
 }
 
