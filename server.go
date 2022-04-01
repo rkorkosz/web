@@ -43,6 +43,12 @@ func WithTLSConfig(conf *tls.Config) func(*http.Server) {
 	}
 }
 
+func WithHandler(h http.Handler) func(*http.Server) {
+	return func(srv *http.Server) {
+		srv.Handler = h
+	}
+}
+
 func RunServer(ctx context.Context, srv *http.Server) {
 	go func() {
 		if err := srv.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
