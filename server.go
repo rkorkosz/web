@@ -87,12 +87,16 @@ func HTTP3Middleware(next http.Handler, addr string) http.Handler {
 	})
 }
 
-func AutoCertTLSConfig(email string, hosts ...string) *tls.Config {
+func AutoCertWhitelist(email string, hosts ...string) *tls.Config {
+    return AutoCertTLSConfig(email, autocert.HostWhitelist(hosts...))
+}
+
+func AutoCertTLSConfig(email string, policy autocert.HostPolicy) *tls.Config {
 	m := &autocert.Manager{
 		Cache:      autocert.DirCache("./letsencrypt/"),
 		Prompt:     autocert.AcceptTOS,
 		Email:      email,
-		HostPolicy: autocert.HostWhitelist(hosts...),
+		HostPolicy: policy,
 	}
 	conf := baseTLSConfig()
 	conf.NextProtos = []string{
