@@ -87,6 +87,23 @@ func HTTP3Middleware(next http.Handler, addr string) http.Handler {
 	})
 }
 
+// LocalAndAutoCert is loading both local and autocert Certificates
+// Local certificates are checked first
+func LocalAndAutoCert(cert, key, email string, policy autocert.HostPolicy) *tls.Config {
+	localConf := LocalTLSConfig(cert, key)
+	autoConf := TlsWithAutoCert(localConf, email, policy)
+	conf := autoConf.Clone()
+	conf.GetCertificate = func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+		for _, cert := range conf.Certificates {
+			if err := clientHello.SupportsCertificate(&cert); err == nil {
+				return &cert, nil
+			}
+		}
+		return autoConf.GetCertificate(clientHello)
+	}
+	return conf
+}
+
 func AutoCertTLSConfig(email string, policy autocert.HostPolicy) *tls.Config {
 	return TlsWithAutoCert(BaseTLSConfig(), email, policy)
 }
