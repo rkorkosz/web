@@ -88,13 +88,17 @@ func HTTP3Middleware(next http.Handler, addr string) http.Handler {
 }
 
 func AutoCertTLSConfig(email, host string) *tls.Config {
+	return TlsWithAutoCert(BaseTLSConfig(), email, host)
+}
+
+func TlsWithAutoCert(conf *tls.Config, email, host string) *tls.Config {
+	conf = conf.Clone()
 	m := &autocert.Manager{
 		Cache:      autocert.DirCache("./letsencrypt/"),
 		Prompt:     autocert.AcceptTOS,
 		Email:      email,
 		HostPolicy: autocert.HostWhitelist(host),
 	}
-	conf := baseTLSConfig()
 	conf.NextProtos = []string{
 		"h3", "h2", "http/1.1", // enable HTTP/2
 		acme.ALPNProto, // enable tls-alpn ACME challenges
@@ -106,17 +110,28 @@ func AutoCertTLSConfig(email, host string) *tls.Config {
 	return conf
 }
 
-func LocalTLSConfig(certFile, keyFile string) *tls.Config {
+func TlsWithLocalCert(conf *tls.Config, certFile, keyFile string) (*tls.Config, error) {
+	conf = conf.Clone()
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, err
+	}
+	if conf.Certificates == nil {
+		conf.Certificates = []tls.Certificate{}
+	}
+	conf.Certificates = append(conf.Certificates, cert)
+	return conf, nil
+}
+
+func LocalTLSConfig(certFile, keyFile string) *tls.Config {
+	conf, err := TlsWithLocalCert(BaseTLSConfig(), certFile, keyFile)
 	if err != nil {
 		log.Fatal(err)
 	}
-	conf := baseTLSConfig()
-	conf.Certificates = []tls.Certificate{cert}
 	return conf
 }
 
-func baseTLSConfig() *tls.Config {
+func BaseTLSConfig() *tls.Config {
 	return &tls.Config{
 		NextProtos: []string{
 			"h2", "http/1.1",
@@ -126,7 +141,7 @@ func baseTLSConfig() *tls.Config {
 			tls.CurveP256,
 			tls.X25519,
 		},
-		MinVersion: tls.VersionTLS12,
+		MinVersion: tls.VersionTLS13,
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
