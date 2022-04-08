@@ -65,7 +65,7 @@ func RunServer(ctx context.Context, srv *http.Server) {
 			},
 		}
 
-		if err := s.ListenAndServeTLS("", ""); err != nil {
+		if err := s.ListenAndServe(); err != nil {
 			log.Fatal(err)
 		}
 	}()
