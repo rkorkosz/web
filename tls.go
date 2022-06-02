@@ -86,7 +86,7 @@ func VaultTLSConfig(vaultAddr, vaultToken, vaultRole, cn string, ttl time.Durati
 		URL:        vaultURL,
 		Token:      vaultToken,
 		Role:       vaultRole,
-		TimeToLive: 10 * time.Minute,
+		TimeToLive: ttl,
 	}
 	c := &certify.Certify{
 		CommonName: cn,
